@@ -1,17 +1,21 @@
 #ifndef C_AMPERSAND_STDLIB_H
 #define C_AMPERSAND_STDLIB_H
 
-// C Ampersand Standart Kütüphanesi
+// C Ampersand Standart Kütüphanesi Temelleri
 // Rust ve C temelli, Sahne64 API'sına bağımlı
 
+// Temel C tipleri (Sahne64 araç zinciri tarafından sağlanmalı)
 #include <stddef.h> // size_t gibi temel tipler için
 #include <stdint.h> // uint64_t, int32_t gibi kesin boyutlu tipler için
-#include <stdbool.h> // bool, true, false için (Rust'taki gibi)
+#include <stdbool.h> // bool, true, false için
 
-// Sahne64 API Başlık Dosyası (varsayalım ki bu isimde bir dosyanız var)
-#include "sahne64_api.h"
+// Sahne64 API Başlık Dosyası (Temel Sahne tipleri ve hata kodları için)
+#include "sahne.h" // sahne_error_t, SAHNE_SUCCESS, u64, vsnprintf vb. için varsayım
 
-// --- Temel Veri Tipleri (c&_types.h'de de tanımlanmış olabilir) ---
+
+// --- Temel C& Veri Tipleri ---
+// Sahne64'ün sağladığı temel tiplerin alias'ları veya C&'e özel temel tipler.
+// c&_types.h daha karmaşık/dil seviyesi tipleri (struct, array vb.) tanımlar.
 typedef uint8_t c_ampersand_u8;
 typedef uint16_t c_ampersand_u16;
 typedef uint32_t c_ampersand_u32;
@@ -25,118 +29,110 @@ typedef int64_t c_ampersand_i64;
 typedef float c_ampersand_f32;
 typedef double c_ampersand_f64;
 
+
 // --- Hata Yönetimi (Rust'taki Result benzeri bir yapı) ---
 typedef enum {
-    C_AMPERSAND_OK = 0,
-    C_AMPERSAND_ERROR_OUT_OF_MEMORY,
-    C_AMPERSAND_ERROR_INVALID_ARGUMENT,
+    C_AMPERSAND_OK = 0, // Başarılı durum
+
+    // Genel Hatalar
+    C_AMPERSAND_ERROR_UNKNOWN = 1,
+    C_AMPERSAND_ERROR_OUT_OF_MEMORY,
+    C_AMPERSAND_ERROR_INVALID_ARGUMENT,
+    C_AMPERSAND_ERROR_NULL_POINTER, // NULL pointer hatası
+
+    // Sistem Kaynakları Hataları
+    C_AMPERSAND_ERROR_IO_ERROR, // Genel Giriş/Çıkış Hatası
     C_AMPERSAND_ERROR_FILE_NOT_FOUND,
-    C_AMPERSAND_ERROR_PERMISSION_DENIED,
-    C_AMPERSAND_ERROR_IO_ERROR,
-    C_AMPERSAND_ERROR_PROCESS_CREATION_FAILED,
-    C_AMPERSAND_ERROR_THREAD_CREATION_FAILED,
-    C_AMPERSAND_ERROR_MUTEX_ERROR,
-    C_AMPERSAND_ERROR_IPC_ERROR,
-    // ... diğer olası hatalar
-    C_AMPERSAND_ERROR_UNKNOWN
+    C_AMPERSAND_ERROR_PERMISSION_DENIED,
+    C_AMPERSAND_ERROR_RESOURCE_UNAVAILABLE, // Kaynak (örn. dosya, socket) geçici olarak kullanılamıyor
+    C_AMPERSAND_ERROR_LIMIT_REACHED, // Sistem limiti aşıldı (örn. max dosya, max süreç)
+
+    // Süreç/Thread Hataları
+    C_AMPERSAND_ERROR_PROCESS_CREATION_FAILED,
+    C_AMPERSAND_ERROR_THREAD_CREATION_FAILED,
+    C_AMPERSAND_ERROR_PROCESS_NOT_FOUND, // Belirtilen PID'de süreç yok
+    C_AMPERSAND_ERROR_WAIT_FAILED, // Süreç bekleme hatası
+    C_AMPERSAND_ERROR_SIGNAL_FAILED, // Sinyal gönderme hatası
+
+    // Senkronizasyon Hataları
+    C_AMPERSAND_ERROR_MUTEX_ERROR, // Genel mutex hatası
+    C_AMPERSAND_ERROR_DEADLOCK, // Kilitlenme tespit edildi
+    C_AMPERSAND_ERROR_ALREADY_LOCKED, // Zaten kilitli kaynağı kilitleme girişimi
+
+    // Ağ Hataları (Varsayımsal)
+    C_AMPERSAND_ERROR_NETWORK_ERROR, // Genel Ağ Hatası
+    C_AMPERSAND_ERROR_CONNECTION_REFUSED,
+    C_AMPERSAND_ERROR_CONNECTION_RESET,
+    C_AMPERSAND_ERROR_HOST_NOT_FOUND,
+
+    // Dil/Runtime Hataları
+    C_AMPERSAND_ERROR_TYPE_MISMATCH,
+    C_AMPERSAND_ERROR_DIVISION_BY_ZERO,
+    C_AMPERSAND_ERROR_UNSUPPORTED_OPERATION,
+    C_AMPERSAND_ERROR_SEMANTIC, // Semantik analiz hatası
+    C_AMPERSAND_ERROR_RUNTIME, // Çalışma zamanı hatası
+    C_AMPERSAND_ERROR_INDEX_OUT_OF_BOUNDS, // Dizi/buffer dışı erişim
+    C_AMPERSAND_ERROR_NULL_REFERENCE, // Null referans hatası
+    C_AMPERSAND_ERROR_PACKAGE_FORMAT, // Paket formatı geçersiz
+    C_AMPERSAND_ERROR_PACKAGE_ALREADY_INSTALLED, // Paket zaten kurulu
+    C_AMPERSAND_ERROR_PACKAGE_NOT_INSTALLED, // Paket kurulu değil
+    C_AMPERSAND_ERROR_REPOSITORY_NOT_FOUND, // Depo bulunamadı
+    // ... Diğer modül/dil spesifik hatalar eklenebilir
+
+    // Özel Hata Kodları İçin Başlangıç (modüller kendi özel hatalarını tanımlayabilir)
+    C_AMPERSAND_ERROR_CUSTOM_START = 100,
+
+    // Hata kodu sayısı (veya son geçerli kod)
+    C_AMPERSAND_ERROR_COUNT
+
 } c_ampersand_result_code;
 
+// Fonksiyon sonuçlarını ve hata bilgilerini (mesaj dahil) tutan yapı
 typedef struct {
-    c_ampersand_result_code code;
-    // İstenirse ek hata bilgisi eklenebilir
+    c_ampersand_result_code code; // Sonuç kodu
+    char *message; // Hata mesajı (heap'te tahsis edilmiş olabilir)
+    size_t message_allocated_size; // Mesaj stringi için ayrılan boyut (free için)
 } c_ampersand_result;
 
-// Başarılı bir sonucu kolayca oluşturmak için makro
-#define C_AMPERSAND_OK_RESULT { C_AMPERSAND_OK }
+// Başarılı bir sonucu kolayca oluşturmak için makro (mesaj alanlarını sıfırlar)
+#define C_AMPERSAND_OK_RESULT { C_AMPERSAND_OK, NULL, 0 }
 
-// --- Giriş/Çıkış İşlemleri (Sahne64 fs modülünü kullanır) ---
+// Mesaj içeren bir hata c_ampersand_result yapısı oluşturur.
+// Message stringi heap'te tahsis edilir (c&_stdlib.c içinde implemente edilir).
+c_ampersand_result c_ampersand_error_with_message(c_ampersand_result_code code, const char *format, ...);
 
-// Dosya açma modları (Sahne64'teki ile uyumlu)
-#define C_AMPERSAND_O_RDONLY SAHNE64_O_RDONLY
-#define C_AMPERSAND_O_WRONLY SAHNE64_O_WRONLY
-#define C_AMPERSAND_O_RDWR   SAHNE64_O_RDWR
-#define C_AMPERSAND_O_CREAT  SAHNE64_O_CREAT
-#define C_AMPERSAND_O_EXCL   SAHNE64_O_EXCL
-#define C_AMPERSAND_O_TRUNC  SAHNE64_O_TRUNC
+// Bir c_ampersand_result yapısındaki hata mesajı stringini serbest bırakır.
+// result yapısının kendisini serbest BIRAKMAZ.
+// (c&_stdlib.c içinde implemente edilir).
+c_ampersand_result c_ampersand_result_free_message(c_ampersand_result *result);
 
-// Dosya tanımlayıcısı (Sahne64'teki ile aynı olabilir)
-typedef sahne64_fd_t c_ampersand_file_descriptor;
+// Sahne64 hata kodunu C& hata koduna eşler (c&_stdlib.c içinde implemente edilir).
+c_ampersand_error_code map_sahne_error_to_camper_error(sahne_error_t sahne_err);
 
-// Dosya açma
-c_ampersand_result c_ampersand_file_open(const char *path, uint32_t flags, c_ampersand_file_descriptor *fd);
 
-// Dosyadan okuma
-c_ampersand_result c_ampersand_file_read(c_ampersand_file_descriptor fd, void *buffer, size_t count, size_t *bytes_read);
+// --- Modül Başlıklarının Dahil Edilmesi ---
+// Standart kütüphanenin parçası olan diğer modüllerin arayüzlerini sağlar.
+#include "c&_types.h" // Veri tipleri tanımı
+#include "c&_memory.h" // Bellek yönetimi (allocate, free)
+#include "c&_io_operations.h" // Giriş/Çıkış (dosya, konsol)
+#include "c&_process.h" // Süreç yönetimi
+#include "c&_string.h" // String yardımcı fonksiyonları
 
-// Dosyaya yazma
-c_ampersand_result c_ampersand_file_write(c_ampersand_file_descriptor fd, const void *buffer, size_t count, size_t *bytes_written);
+// --- Konsol Giriş/Çıkış (Formatlı) ---
+// Standart çıktıya yazdırma (c&_stdlib.c içinde implemente edilir).
+// vsnprintf ve Sahne64 konsol API'sını kullanır.
+c_ampersand_result c_ampersand_print(const char *format, ...);
+c_ampersand_result c_ampersand_println(const char *format, ...);
 
-// Dosyayı kapatma
-c_ampersand_result c_ampersand_file_close(c_ampersand_file_descriptor fd);
 
-// Standart çıktıya yazdırma (Sahne64 API'sını kullanabilir)
-c_ampersand_result c_ampersand_print(const char *str);
-c_ampersand_result c_ampersand_println(const char *str);
+// --- Matematiksel Fonksiyonlar ---
+// Basit örnek, daha fazlası c&_math.h/c'de olabilir.
+int c_ampersand_abs(int n); // c&_stdlib.c içinde implemente edilir.
 
-// --- Süreç Yönetimi (Sahne64 process modülünü kullanır) ---
-
-// Süreç ID'si
-typedef sahne64_pid_t c_ampersand_process_id;
-
-// Yeni bir süreç oluşturma
-c_ampersand_result c_ampersand_process_create(const char *path, c_ampersand_process_id *pid);
-
-// Mevcut süreci sonlandırma
-void c_ampersand_process_exit(int code);
-
-// Mevcut sürecin ID'sini alma
-c_ampersand_result c_ampersand_process_get_pid(c_ampersand_process_id *pid);
-
-// Süreci uyutma
-c_ampersand_result c_ampersand_process_sleep(uint64_t milliseconds);
-
-// --- Thread Yönetimi (Sahne64 process modülünü kullanır) ---
-
-// Thread ID'si
-typedef sahne64_thread_id_t c_ampersand_thread_id;
-
-// Yeni bir thread oluşturma (entry_point bir fonksiyon pointer'ı olmalı)
-typedef void (*c_ampersand_thread_entry_point)(void *);
-c_ampersand_result c_ampersand_thread_create(c_ampersand_thread_entry_point entry_point, size_t stack_size, void *arg, c_ampersand_thread_id *thread_id);
-
-// Mevcut thread'i sonlandırma
-void c_ampersand_thread_exit(int code);
-
-// --- Senkronizasyon (Sahne64 sync modülünü kullanır) ---
-
-// Muteks ID'si
-typedef sahne64_mutex_id_t c_ampersand_mutex_id;
-
-// Muteks oluşturma
-c_ampersand_result c_ampersand_mutex_create(c_ampersand_mutex_id *mutex_id);
-
-// Muteksi kilitleme
-c_ampersand_result c_ampersand_mutex_lock(c_ampersand_mutex_id mutex_id);
-
-// Muteksi kilidini açma
-c_ampersand_result c_ampersand_mutex_unlock(c_ampersand_mutex_id mutex_id);
-
-// --- Bellek Yönetimi (Otomatik bellek yönetimi dilin bir parçası olsa da temel fonksiyonlar olabilir) ---
-
-// Belirli boyutta bellek ayırma (çöp toplayıcı ile etkileşimli olabilir)
-c_ampersand_result c_ampersand_allocate(size_t size, void **ptr);
-
-// Belleği serbest bırakma (çöp toplayıcı tarafından otomatik yapılsa da gerekebilir)
-c_ampersand_result c_ampersand_free(void *ptr);
-
-// --- String İşlemleri (Basit örnekler) ---
-size_t c_ampersand_string_length(const char *str);
-// ... diğer string fonksiyonları eklenebilir
-
-// --- Matematiksel Fonksiyonlar (Basit örnekler) ---
- int c_ampersand_abs(int n);
-// ... diğer matematiksel fonksiyonlar eklenebilir
 
 // --- Diğer Yardımcı Fonksiyonlar ---
+// Zaman, tarih, rastgele sayılar, çevre değişkenleri vb. için fonksiyonlar eklenebilir.
+// Bunlar da ayrı modüller (c&_time.h, c&_random.h, c&_env.h) ve .c dosyaları gerektirir.
+
 
 #endif // C_AMPERSAND_STDLIB_H
