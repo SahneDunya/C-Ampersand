@@ -1,8 +1,19 @@
 #ifndef C_AMPERSAND_MATH_H
 #define C_AMPERSAND_MATH_H
 
-#include "c&_stdlib.h" // Temel tipler ve hata yönetimi için
-#include <math.h>   // Standart C matematik fonksiyonları için (gerekli tanımlar)
+// Temel C& tipler ve hata yönetimi için (bu modülde doğrudan kullanılmıyor olabilir ama standart dahil etme)
+#include "c&_stdlib.h"
+
+// Standart C matematik fonksiyonları için tanımlar.
+// ÖNEMLİ: SAHNE64'ün C araç zincirinin <math.h>'de bildirilen
+// fonksiyonların no_std ortamında kullanılabilen bir implementasyonunu (libm)
+// sağladığı varsayılmaktadır. Aksi takdirde, bu fonksiyonların
+// C& runtime içinde yazılımsal olarak implemente edilmesi gerekir.
+#include <math.h>
+
+// abs fonksiyonu için stdlib.h'ye ihtiyaç duyulabilir (C89/C90 uyumluluğu için)
+// C99 ve sonrası için <math.h> de abs içerebilir ama stdlib.h dahil etmek daha güvenlidir.
+#include <stdlib.h> // abs için
 
 // Pi sabiti
 #define C_AMPERSAND_PI 3.14159265358979323846
