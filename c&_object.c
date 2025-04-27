@@ -10,13 +10,6 @@
 // C& bellek yönetimi fonksiyonları için (Sahne64 API sarmalayıcıları)
 #include "c&_memory.h"
 
-// sahne64_api.h kaldırıldı
-// #include "sahne64_api.h" // Bellek yönetimi için
-
-// stdlib.h (malloc, free) ve stdio.h (fprintf) kaldırıldı
-// #include <stdlib.h>
-// #include <stdio.h>
-
 #include <string.h> // strlen, strcmp, memcpy için
 #include <stdint.h> // int32_t, uint32_t vb. için (c&_types.h de sağlayabilir)
 #include <stdbool.h> // bool için
