@@ -8,6 +8,16 @@ It is a programming language developed by Sahne Dünya for the Sahne64 ecosystem
 4. Platform support: Classic C/C++ and Rust are completely platform independent, while C Ampersand is heavily dependent on Sahne64, which means that Sahne is heavily dependent on operating systems that use the Karnal architecture, meaning it is not platform independent.
 5. Abstraction layer: C and Rust languages ​​are lower level as they are focused on system programming. C Ampersand is a higher level language as it is more focused on Application development!
 
+# Basic features
+* File extension: .campersand (For C&)
+* Memory Management: Garbage collection
+* Compilation type: Ahead-of-Time
+* The executable file developed for it: .cand
+* Underlying programming language: Rust and Classic C Programing Languge
+* Modern language features: yes
+* Standard Libray: yes
+
+
 # Target Hello World code
 ```
 fn main() { 
