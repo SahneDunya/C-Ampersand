@@ -7,3 +7,10 @@ It is a programming language developed by Sahne Dünya for the Sahne64 ecosystem
 3.Purpose of creation: The main purpose of the classical C language is to meet the need for system programming, the main purpose of the Rust language is to facilitate the development of secure, concurrent and high-performance systems. The main purpose of the C Ampersand language is to be the main programming language of the Sahne64 ecosystem.
 4. Platform support: Classic C/C++ and Rust are completely platform independent, while C Ampersand is heavily dependent on Sahne64, which means that Sahne is heavily dependent on operating systems that use the Karnal architecture, meaning it is not platform independent.
 5. Abstraction layer: C and Rust languages ​​are lower level as they are focused on system programming. C Ampersand is a higher level language as it is more focused on Application development!
+
+# Target Hello World code
+
+fn main() { 
+    println("Merhaba Dünya!");
+    exit(0); 
+}
