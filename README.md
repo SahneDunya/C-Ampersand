@@ -16,6 +16,8 @@ It is a programming language developed by Sahne Dünya for the Sahne64 ecosystem
 * Underlying programming language: Rust and Classic C Programing Languge
 * Modern language features: yes
 * Standard Libray: yes
+* Target source file: 216 MB
+* Main programming language: C
 
 
 # Target Hello World code
